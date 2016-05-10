@@ -6,15 +6,16 @@ import com.jaspersoft.jasperserver.dto.executions.ClientMultiAxesQueryResultData
 import com.jaspersoft.jasperserver.dto.executions.ClientMultiLevelQueryExecution;
 import com.jaspersoft.jasperserver.dto.executions.ClientMultiLevelQueryResultData;
 import com.jaspersoft.jasperserver.dto.executions.ClientProvidedQueryExecution;
+import com.jaspersoft.jasperserver.dto.executions.ClientQueryResultData;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.adhoc.queryexecution.enums.QueryExecutionsMediaType;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.adhoc.queryexecution.enums.QueryResultDataMediaType;
 import com.jaspersoft.jasperserver.jaxrs.client.core.JerseyRequest;
 import com.jaspersoft.jasperserver.jaxrs.client.core.RestClientConfiguration;
 import com.jaspersoft.jasperserver.jaxrs.client.core.SessionStorage;
-import com.jaspersoft.jasperserver.jaxrs.client.core.enums.MimeType;
 import com.jaspersoft.jasperserver.jaxrs.client.core.exceptions.MandatoryParameterNotFoundException;
 import com.jaspersoft.jasperserver.jaxrs.client.core.exceptions.handling.DefaultErrorHandler;
 import com.jaspersoft.jasperserver.jaxrs.client.core.operationresult.OperationResult;
+import javax.ws.rs.core.MultivaluedHashMap;
 import org.mockito.Mock;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -25,13 +26,16 @@ import org.testng.annotations.Test;
 
 import static com.jaspersoft.jasperserver.jaxrs.client.core.JerseyRequest.buildRequest;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
@@ -51,6 +55,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
     public static final String QUERY_EXECUTIONS_URI = "queryExecutions";
     public static final String CONTENT_TYPE = "someContentType";
     public static final String ACCEPT_TYPE = "someAcceptType";
+    public static final String SOME_UUID = "someUuid";
+    public static final String DATA = "data";
     @Mock
     private SessionStorage storageMock;
     @Mock
@@ -65,6 +71,10 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
     private JerseyRequest<ClientMultiAxesQueryResultData> multiAxesRequestMock;
     @Mock
     private OperationResult<ClientMultiAxesQueryResultData> multiAxesOperationResultMock;
+    @Mock
+    private JerseyRequest<ClientQueryResultData> requestMock;
+    @Mock
+    private OperationResult<ClientQueryResultData> operationResultMock;
     @Mock
     private RestClientConfiguration configurationMock;
 
@@ -83,6 +93,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 flatOperationResultMock,
                 multiAxesRequestMock,
                 multiAxesOperationResultMock,
+                requestMock,
+                operationResultMock,
                 configurationMock);
     }
 
@@ -95,6 +107,17 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         assertEquals(Whitebox.getInternalState(adapter, "dataSetClass"), Object.class);
         assertEquals(Whitebox.getInternalState(adapter, "contentType"), CONTENT_TYPE);
         assertEquals(Whitebox.getInternalState(adapter, "acceptType"), ACCEPT_TYPE);
+    }
+
+    @Test
+    public void should_set_proper_internal_state_with_params() {
+        // When
+        QueryExecutionAdapter adapter = new QueryExecutionAdapter(storageMock, CONTENT_TYPE, ACCEPT_TYPE, Object.class).
+                offset(0).
+                pageSize(10);
+
+        //Then
+        assertEquals(2, ((MultivaluedHashMap<String, String>)Whitebox.getInternalState(adapter, "params")).size());
     }
 
     @Test(expectedExceptions = MandatoryParameterNotFoundException.class)
@@ -115,8 +138,6 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(ClientMultiLevelQueryResultData.class),
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class))).thenReturn(multiLevelRequestMock);
-        doReturn(configurationMock).when(storageMock).getConfiguration();
-        doReturn(MimeType.JSON).when(configurationMock).getContentMimeType();
         doReturn(multiLevelRequestMock).when(multiLevelRequestMock).
                 setContentType(QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_JSON);
         doReturn(multiLevelRequestMock).when(multiLevelRequestMock).
@@ -124,8 +145,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         doReturn(multiLevelOperationResultMock).when(multiLevelRequestMock).post(any(ClientMultiLevelQueryExecution.class));
 
         QueryExecutionAdapter<ClientMultiLevelQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
-                QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_TYPE,
-                QueryResultDataMediaType.MULTI_LEVEL_DATA_TYPE,
+                QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_JSON,
+                QueryResultDataMediaType.MULTI_LEVEL_DATA_JSON,
                 ClientMultiLevelQueryResultData.class);
 
         // When /
@@ -134,6 +155,10 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         // Then /
         assertNotNull(retrieved);
         assertSame(retrieved, multiLevelOperationResultMock);
+        verify(multiLevelRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_JSON);
+        verify(multiLevelRequestMock).
+                setAccept(QueryResultDataMediaType.MULTI_LEVEL_DATA_JSON);
         verify(multiLevelRequestMock).post(any(ClientMultiLevelQueryExecution.class));
         verifyStatic(times(1));
         buildRequest(
@@ -153,8 +178,6 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(ClientFlatQueryResultData.class),
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class))).thenReturn(flatRequestMock);
-        doReturn(configurationMock).when(storageMock).getConfiguration();
-        doReturn(MimeType.JSON).when(configurationMock).getContentMimeType();
         doReturn(flatRequestMock).when(flatRequestMock).
                 setContentType(QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_JSON);
         doReturn(flatRequestMock).when(flatRequestMock).
@@ -162,8 +185,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         doReturn(flatOperationResultMock).when(flatRequestMock).post(any(ClientMultiLevelQueryExecution.class));
 
         QueryExecutionAdapter<ClientFlatQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
-                QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_TYPE,
-                QueryResultDataMediaType.FLAT_DATA_TYPE,
+                QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_JSON,
+                QueryResultDataMediaType.FLAT_DATA_JSON,
                 ClientFlatQueryResultData.class);
 
         // When /
@@ -172,6 +195,10 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         // Then /
         assertNotNull(retrieved);
         assertSame(retrieved, flatOperationResultMock);
+        verify(flatRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_MULTI_LEVEL_QUERY_JSON);
+        verify(flatRequestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
         verify(flatRequestMock).post(any(ClientMultiLevelQueryExecution.class));
         verifyStatic(times(1));
         buildRequest(
@@ -192,8 +219,6 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(ClientMultiAxesQueryResultData.class),
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class))).thenReturn(multiAxesRequestMock);
-        doReturn(configurationMock).when(storageMock).getConfiguration();
-        doReturn(MimeType.JSON).when(configurationMock).getContentMimeType();
         doReturn(multiAxesRequestMock).when(multiAxesRequestMock).
                 setContentType(QueryExecutionsMediaType.EXECUTION_MULTI_AXES_QUERY_JSON);
         doReturn(multiAxesRequestMock).when(multiAxesRequestMock).
@@ -201,8 +226,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         doReturn(multiAxesOperationResultMock).when(multiAxesRequestMock).post(any(ClientMultiAxesQueryExecution.class));
 
         QueryExecutionAdapter<ClientMultiAxesQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
-                QueryExecutionsMediaType.EXECUTION_MULTI_AXES_QUERY_TYPE,
-                QueryResultDataMediaType.MULTI_AXES_DATA_TYPE,
+                QueryExecutionsMediaType.EXECUTION_MULTI_AXES_QUERY_JSON,
+                QueryResultDataMediaType.MULTI_AXES_DATA_JSON,
                 ClientMultiAxesQueryResultData.class);
 
         // When /
@@ -211,7 +236,12 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         // Then /
         assertNotNull(retrieved);
         assertSame(retrieved, multiAxesOperationResultMock);
+        verify(multiAxesRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_MULTI_AXES_QUERY_JSON);
+        verify(multiAxesRequestMock).
+                setAccept(QueryResultDataMediaType.MULTI_AXES_DATA_JSON);
         verify(multiAxesRequestMock).post(any(ClientMultiAxesQueryExecution.class));
+
         verifyStatic(times(1));
         buildRequest(
                 eq(storageMock),
@@ -230,8 +260,6 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(ClientMultiAxesQueryResultData.class),
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class))).thenReturn(multiAxesRequestMock);
-        doReturn(configurationMock).when(storageMock).getConfiguration();
-        doReturn(MimeType.JSON).when(configurationMock).getContentMimeType();
         doReturn(multiAxesRequestMock).when(multiAxesRequestMock).
                 setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
         doReturn(multiAxesRequestMock).when(multiAxesRequestMock).
@@ -239,8 +267,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         doReturn(multiAxesOperationResultMock).when(multiAxesRequestMock).post(any(ClientProvidedQueryExecution.class));
 
         QueryExecutionAdapter<ClientMultiAxesQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
-                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_TYPE,
-                QueryResultDataMediaType.MULTI_AXES_DATA_TYPE,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON,
+                QueryResultDataMediaType.MULTI_AXES_DATA_JSON,
                 ClientMultiAxesQueryResultData.class);
 
         // When /
@@ -249,7 +277,12 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         // Then /
         assertNotNull(retrieved);
         assertSame(retrieved, multiAxesOperationResultMock);
+        verify(multiAxesRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        verify(multiAxesRequestMock).
+                setAccept(QueryResultDataMediaType.MULTI_AXES_DATA_JSON);
         verify(multiAxesRequestMock).post(any(ClientProvidedQueryExecution.class));
+
         verifyStatic(times(1));
         buildRequest(
                 eq(storageMock),
@@ -269,8 +302,6 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(ClientMultiLevelQueryResultData.class),
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class))).thenReturn(multiLevelRequestMock);
-        doReturn(configurationMock).when(storageMock).getConfiguration();
-        doReturn(MimeType.JSON).when(configurationMock).getContentMimeType();
         doReturn(multiLevelRequestMock).when(multiLevelRequestMock).
                 setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
         doReturn(multiLevelRequestMock).when(multiLevelRequestMock).
@@ -278,8 +309,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         doReturn(multiLevelOperationResultMock).when(multiLevelRequestMock).post(any(ClientProvidedQueryExecution.class));
 
         QueryExecutionAdapter<ClientMultiLevelQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
-                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_TYPE,
-                QueryResultDataMediaType.MULTI_LEVEL_DATA_TYPE,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON,
+                QueryResultDataMediaType.MULTI_LEVEL_DATA_JSON,
                 ClientMultiLevelQueryResultData.class);
 
         // When /
@@ -288,7 +319,12 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         // Then /
         assertNotNull(retrieved);
         assertSame(retrieved, multiLevelOperationResultMock);
+        verify(multiLevelRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        verify(multiLevelRequestMock).
+                setAccept(QueryResultDataMediaType.MULTI_LEVEL_DATA_JSON);
         verify(multiLevelRequestMock).post(any(ClientProvidedQueryExecution.class));
+
         verifyStatic(times(1));
         buildRequest(
                 eq(storageMock),
@@ -306,8 +342,6 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(ClientFlatQueryResultData.class),
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class))).thenReturn(flatRequestMock);
-        doReturn(configurationMock).when(storageMock).getConfiguration();
-        doReturn(MimeType.JSON).when(configurationMock).getContentMimeType();
         doReturn(flatRequestMock).when(flatRequestMock).
                 setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
         doReturn(flatRequestMock).when(flatRequestMock).
@@ -315,8 +349,8 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         doReturn(flatOperationResultMock).when(flatRequestMock).post(any(ClientMultiLevelQueryExecution.class));
 
         QueryExecutionAdapter<ClientFlatQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
-                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_TYPE,
-                QueryResultDataMediaType.FLAT_DATA_TYPE,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON,
+                QueryResultDataMediaType.FLAT_DATA_JSON,
                 ClientFlatQueryResultData.class);
 
         // When /
@@ -325,7 +359,12 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
         // Then /
         assertNotNull(retrieved);
         assertSame(retrieved, flatOperationResultMock);
-        verify(flatRequestMock).post(any(ClientProvidedQueryExecution.class));
+        verify(flatRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        verify(flatRequestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        verify(flatRequestMock).post(any(ClientMultiLevelQueryExecution.class));
+
         verifyStatic(times(1));
         buildRequest(
                 eq(storageMock),
@@ -333,5 +372,156 @@ public class QueryExecutionAdapterTest extends PowerMockTestCase {
                 eq(new String[]{QUERY_EXECUTIONS_URI}),
                 any(DefaultErrorHandler.class));
 
+    }
+
+    @Test
+    public void should_return_proper_operation_result_when_get_fragment_provided_flat_query() {
+        // Given
+        mockStatic(JerseyRequest.class);
+        when(buildRequest(
+                eq(storageMock),
+                eq(ClientQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID, DATA}),
+                any(DefaultErrorHandler.class))).thenReturn(requestMock);
+        doReturn(requestMock).when(requestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        doReturn(requestMock).when(requestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        doReturn(operationResultMock).when(requestMock).get();
+
+        QueryExecutionAdapter<ClientQueryResultData> adapter = new QueryExecutionAdapter(storageMock,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON,
+                QueryResultDataMediaType.FLAT_DATA_JSON,
+                ClientQueryResultData.class);
+
+        // When /
+        OperationResult<ClientQueryResultData> retrieved = adapter.retrieveData(SOME_UUID);
+
+        // Then /
+        assertNotNull(retrieved);
+        assertSame(retrieved, operationResultMock);
+        verify(requestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        verify(requestMock).get();
+        verifyStatic(times(1));
+        buildRequest(
+                eq(storageMock),
+                eq(ClientQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID, DATA}),
+                any(DefaultErrorHandler.class));
+
+    }
+
+    @Test
+    public void should_return_proper_operation_result_when_get_fragment_provided_flat_query_with_params() {
+        // Given
+        QueryExecutionAdapter<ClientFlatQueryResultData> adapter = spy(new QueryExecutionAdapter(storageMock,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON,
+                QueryResultDataMediaType.FLAT_DATA_JSON,
+                ClientFlatQueryResultData.class));
+        mockStatic(JerseyRequest.class);
+        when(buildRequest(
+                eq(storageMock),
+                eq(ClientFlatQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID, DATA}),
+                any(DefaultErrorHandler.class))).thenReturn(flatRequestMock);
+        doReturn(adapter).when(adapter).offset(anyInt());
+        doReturn(adapter).when(adapter).pageSize(anyInt());
+        doReturn(flatRequestMock).when(flatRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        doReturn(flatRequestMock).when(flatRequestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        doReturn(flatOperationResultMock).when(flatRequestMock).get();
+
+        // When /
+        OperationResult<ClientFlatQueryResultData> retrieved = adapter.offset(0).pageSize(100).retrieveData(SOME_UUID);
+
+        // Then /
+        assertNotNull(retrieved);
+        assertSame(retrieved, flatOperationResultMock);
+        verify(adapter).offset(anyInt());
+        verify(adapter).pageSize(anyInt());
+        verify(flatRequestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        verify(flatRequestMock).get();
+
+        verifyStatic(times(1));
+        buildRequest(
+                eq(storageMock),
+                eq(ClientFlatQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID, DATA}),
+                any(DefaultErrorHandler.class));
+    }
+
+    @Test
+    public void should_return_proper_operation_result_and_set_internal_state_when_get_fragment_provided_flat_query_with_params() {
+        // Given
+        QueryExecutionAdapter<ClientFlatQueryResultData> adapter = spy(new QueryExecutionAdapter(storageMock,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON,
+                QueryResultDataMediaType.FLAT_DATA_JSON,
+                ClientFlatQueryResultData.class));
+        mockStatic(JerseyRequest.class);
+        when(buildRequest(
+                eq(storageMock),
+                eq(ClientFlatQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID, DATA}),
+                any(DefaultErrorHandler.class))).thenReturn(flatRequestMock);
+        doReturn(flatRequestMock).when(flatRequestMock).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        doReturn(flatRequestMock).when(flatRequestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        doReturn(flatOperationResultMock).when(flatRequestMock).get();
+
+        // When /
+        OperationResult<ClientFlatQueryResultData> retrieved = adapter.offset(0).pageSize(100).retrieveData(SOME_UUID);
+
+        // Then /
+        assertNotNull(retrieved);
+        assertSame(retrieved, flatOperationResultMock);
+        verify(adapter).offset(anyInt());
+        verify(adapter).pageSize(anyInt());
+        assertEquals(2, ((MultivaluedHashMap<String, String>) Whitebox.getInternalState(adapter, "params")).size());
+        verify(flatRequestMock, never()).
+                setContentType(QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_JSON);
+        verify(flatRequestMock).
+                setAccept(QueryResultDataMediaType.FLAT_DATA_JSON);
+        verify(flatRequestMock).get();
+
+        verifyStatic(times(1));
+        buildRequest(
+                eq(storageMock),
+                eq(ClientFlatQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID, DATA}),
+                any(DefaultErrorHandler.class));
+    }
+
+    @Test
+    public void should_return_proper_operation_result_when_delete_query_execution() {
+        // Given
+        QueryExecutionAdapter<ClientFlatQueryResultData> adapter = spy(new QueryExecutionAdapter(storageMock,
+                QueryExecutionsMediaType.EXECUTION_PROVIDED_QUERY_TYPE,
+                QueryResultDataMediaType.FLAT_DATA_TYPE,
+                ClientFlatQueryResultData.class));
+        mockStatic(JerseyRequest.class);
+        when(buildRequest(
+                eq(storageMock),
+                eq(ClientFlatQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID}),
+                any(DefaultErrorHandler.class))).thenReturn(flatRequestMock);
+        doReturn(flatOperationResultMock).when(flatRequestMock).delete();
+
+        // When /
+        OperationResult<ClientFlatQueryResultData> retrieved = adapter.deleteExecution(SOME_UUID);
+
+        // Then /
+        assertNotNull(retrieved);
+        assertSame(retrieved, flatOperationResultMock);
+        verify(flatRequestMock).delete();
+        verifyStatic(times(1));
+        buildRequest(
+                eq(storageMock),
+                eq(ClientFlatQueryResultData.class),
+                eq(new String[]{QUERY_EXECUTIONS_URI, SOME_UUID}),
+                any(DefaultErrorHandler.class));
     }
 }
