@@ -20,6 +20,7 @@
  */
 package com.jaspersoft.jasperserver.jaxrs.client.core;
 
+import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.adhoc.queryexecution.QueryExecutionService;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.attributes.AttributesService;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.authority.organizations.OrganizationsService;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.authority.roles.RolesService;
@@ -121,6 +122,8 @@ public class Session extends AnonymousSession{
     public DiagnosticService diagnosticService() {return getService(DiagnosticService.class);}
 
     public ConnectionsService connectionsService() {return getService(ConnectionsService.class);}
+
+    public QueryExecutionService queryExecutionService() {return getService(QueryExecutionService.class);}
 
     public DataDiscoveryService dataDiscoveryService() {return getService(DataDiscoveryService.class);}
 

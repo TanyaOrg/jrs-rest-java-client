@@ -90,8 +90,6 @@ import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
         ResourceMediaType.XMLA_CONNECTION_XML,
         ResourceMediaType.RESOURCE_LOOKUP_JSON,
         ResourceMediaType.RESOURCE_LOOKUP_XML,
-        ResourceMediaType.DOMAIN_JSON,
-        ResourceMediaType.DOMAIN_XML,
         "application/repository.dashboard+json",
         "application/repository.dashboard+xml",
         "application/repository.domainTopic+json",
@@ -115,7 +113,19 @@ import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
         "application/repository.reportUnit+json",
         "application/repository.reportUnit+xml",
         "application/repository.reportUnit.metadata+json",
-        "application/repository.reportUnit.metadata+xml"
+        "application/repository.reportUnit.metadata+xml",
+        "application/execution.multiLevelQuery+json",
+        "application/execution.multiAxesQuery+json",
+        "application/execution.providedQuery+json",
+        "application/execution.multiLevelQuery+xml",
+        "application/execution.multiAxesQuery+xml",
+        "application/execution.providedQuery+xml",
+        "application/flatData+json",
+        "application/multiLevelData+json",
+        "application/multiAxesData+json",
+        "application/flatData+xml",
+        "application/multiLevelData+xml",
+        "application/multiAxesData+xml"
 })
 @Produces({
         "application/collection+json",
@@ -181,8 +191,6 @@ import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
         ConnectionMediaType.FTP_XML,
         ConnectionMediaType.LOCAL_FILE_SYSTEM_JSON,
         ConnectionMediaType.LOCAL_FILE_SYSTEM_XML,
-        ResourceMediaType.DOMAIN_JSON,
-        ResourceMediaType.DOMAIN_XML,
         "application/repository.domainSchema+json",
         "application/repository.domainSchema+xml",
         "application/xml",
@@ -199,7 +207,19 @@ import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
         "application/repository.reportUnit+json",
         "application/repository.reportUnit+xml",
         "application/repository.reportUnit.metadata+json",
-        "application/repository.reportUnit.metadata+xml"
+        "application/repository.reportUnit.metadata+xml",
+        "application/execution.multiLevelQuery+json",
+        "application/execution.multiAxesQuery+json",
+        "application/execution.providedQuery+json",
+        "application/execution.multiLevelQuery+xml",
+        "application/execution.multiAxesQuery+xml",
+        "application/execution.providedQuery+xml",
+        "application/flatData+json",
+        "application/multiLevelData+json",
+        "application/multiAxesData+json",
+        "application/flatData+xml",
+        "application/multiLevelData+xml",
+        "application/multiAxesData+xml"
 })
 public class CustomRepresentationTypeProvider extends JacksonJaxbJsonProvider {
 

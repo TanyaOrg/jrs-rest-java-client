@@ -6,7 +6,7 @@ import com.jaspersoft.jasperserver.dto.resources.ClientCustomDataSource;
 import com.jaspersoft.jasperserver.dto.resources.ClientJdbcDataSource;
 import com.jaspersoft.jasperserver.dto.resources.ClientJndiJdbcDataSource;
 import com.jaspersoft.jasperserver.dto.resources.ClientReportUnit;
-import com.jaspersoft.jasperserver.dto.resources.domain.ClientDomain;
+import com.jaspersoft.jasperserver.dto.resources.ClientSemanticLayerDataSource;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.AbstractAdapter;
 import com.jaspersoft.jasperserver.jaxrs.client.apiadapters.connections.query.SingleQueryAdapter;
 import com.jaspersoft.jasperserver.jaxrs.client.core.JerseyRequest;
@@ -161,10 +161,10 @@ public class SingleConnectionAdapter<C, M> extends AbstractAdapter {
         }
         return (connection instanceof FtpConnection ||
                 connection instanceof LfsConnection ||
+                connection instanceof ClientSemanticLayerDataSource ||
                 connection instanceof ClientCustomDataSource ||
                 connection instanceof ClientJndiJdbcDataSource ||
                 connection instanceof ClientJdbcDataSource ||
-                connection instanceof ClientDomain ||
                 connection instanceof ClientReportUnit);
     }
 }

@@ -8,7 +8,7 @@
     <groupId>com.jaspersoft</groupId>
     <artifactId>jrs-rest-java-client</artifactId>
 
-    <version>6.2.1_domain_topic_feature</version>
+    <version>6.2.1_domain_metadata_query</version>
 
     <name>REST client for JasperReports server</name>
     <url>http://github.com/Jaspersoft/jrs-rest-java-client</url>
@@ -16,6 +16,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <powermock.version>1.5.5</powermock.version>
+        <jasperserver-dto.version>6.2.0-adhoc-rest-api-SNAPSHOT</jasperserver-dto.version>
     </properties>
 
     <scm>
@@ -40,7 +41,7 @@
         <dependency>
             <groupId>com.jaspersoft.jasperserver</groupId>
             <artifactId>jasperserver-dto</artifactId>
-            <version>7.0-domain-designer-SNAPSHOT</version>
+            <version>${jasperserver-dto.version}</version>
         </dependency>
 
         <!-- Jersey-->
@@ -157,8 +158,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.7</source>
+                    <target>1.7</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -177,6 +178,7 @@
                             </exclude>
                             <exclude>**/com/jaspersoft/jasperserver/jaxrs/client/core/exceptions/**</exclude>
                             <exclude>**/com/jaspersoft/jasperserver/jaxrs/client/core/enums/**</exclude>
+                            <exclude>**/com/jaspersoft/jasperserver/jaxrs/client/apiadapters/adhoc/queryexecution/enums/**</exclude>
                         </excludes>
                     </instrumentation>
                 </configuration>
@@ -198,6 +200,7 @@
                 <version>2.12</version>
                 <configuration>
                     <skipTests>false</skipTests>
+                    <testFailureIgnore>true</testFailureIgnore>
                     <excludes>
                         <exclude>**/IT.java</exclude>
                     </excludes>
