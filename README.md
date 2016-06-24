@@ -106,8 +106,8 @@ Table of Contents
   2. [Import service](#import-service).
     * [Checking the Import State](#checking-the-import-state).
 11. [Metadata](#metadata).
-    *[Domain Metadata](#domain-metadata)
-    *[Report Metadata](#report-metadata)
+  * [Domain Metadata](#domain-metadata).
+  * [Report Metadata](#report-metadata).
 12. [Thumbnail Search Service](#thumbnail-search-service).
 13. [Diagnostic Service](#diagnostic-service).
 14. [Query Executor Service](#query-executor-service).
